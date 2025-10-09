@@ -3,23 +3,27 @@ import { Colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+// ✅ Optional: use a secure logging method (no passwords)
+const safeLog = (message: string, data?: any) => {
+  console.log(message, data ? '[data hidden for security]' : '');
+};
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Handle login (no password logging!)
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Missing info', 'Please enter both email and password.');
@@ -27,20 +31,16 @@ export default function LoginScreen() {
     }
 
     try {
-      // Example placeholder for actual auth logic (Firebase, API, etc.)
-      // 🔒 Never log or store passwords directly
-      console.log(`Attempting login for user: ${email}`);
+      safeLog('Attempting login for:', email);
 
-      // Simulate successful login and redirect to tenant dashboard
+      // Mock successful login
       setTimeout(() => {
         Alert.alert('Success', 'Logged in successfully (demo mode)');
-        // Replace the history so user can't go back to login
-        router.replace('/tenantdash');
+        router.replace('/(tabs)' as any);// navigate to dashboard
       }, 800);
-    } catch (error: any) {
-      // Safe error logging — no sensitive data
-      console.error('Login error:', error.message || error);
+    } catch (error) {
       Alert.alert('Login failed', 'Please check your credentials.');
+      safeLog('Login error:', error);
     }
   };
 
@@ -51,47 +51,50 @@ export default function LoginScreen() {
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 60}
       >
-        <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={styles.title}>Log In</Text>
           <Text style={styles.subtitle}>
             Enter your credentials to access your account.
           </Text>
 
           <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Email address</Text>
-          <TextInput
-            placeholder="you@example.com"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.input}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor="#9AA3A8"
-          />
+            <Text style={styles.fieldLabel}>Email address</Text>
+            <TextInput
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#9AA3A8"
+            />
 
-          <View style={styles.passwordRow}>
-            <Text style={styles.fieldLabel}>Password</Text>
-            <TouchableOpacity onPress={() => {}}>
-              <Text style={styles.forgot}>Forgot?</Text>
+            <View style={styles.passwordRow}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <TouchableOpacity onPress={() => {}}>
+                <Text style={styles.forgot}>Forgot?</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              placeholder="Password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              style={styles.input}
+              placeholderTextColor="#9AA3A8"
+            />
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleLogin}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.buttonText}>Log In</Text>
             </TouchableOpacity>
-          </View>
-
-          <TextInput
-            placeholder="Password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-            placeholderTextColor="#9AA3A8"
-          />
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleLogin}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.buttonText}>Log In</Text>
-          </TouchableOpacity>
           </View>
 
           <View style={styles.footerWrap}>

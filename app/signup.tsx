@@ -30,8 +30,6 @@ export default function SignUpScreen() {
       console.log('Passwords do not match');
       return;
     }
-
-    // later this will connect to Firebase Auth
     console.log('Signing up user:', { name, email });
   };
 
