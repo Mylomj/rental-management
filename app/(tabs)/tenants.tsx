@@ -1,8 +1,10 @@
+import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Tenants() {
   const colorScheme = 'light';
@@ -42,7 +44,8 @@ export default function Tenants() {
   ];
 
   return (
-    <ThemedView style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
@@ -50,7 +53,7 @@ export default function Tenants() {
             <Ionicons name="menu" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Tenants</Text>
-          <View style={styles.placeholder} />
+          <LogoutButton />
         </View>
 
         {/* Tenants List */}
@@ -71,18 +74,19 @@ export default function Tenants() {
           ))}
         </View>
 
-      </ScrollView>
-    </ThemedView>
+        </ScrollView>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#F7F8F9' },
   container: { flex: 1, backgroundColor: '#F7F8F9' },
   content: { padding: 20, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   menuButton: { padding: 8 },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#000' },
-  placeholder: { width: 40 },
   tenantsList: { gap: 12 },
   tenantCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   tenantAvatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#E0E0E0', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
@@ -92,3 +96,4 @@ const styles = StyleSheet.create({
   tenantAddress: { fontSize: 14, color: '#666' },
   tenantArrow: { padding: 8 },
 });
+

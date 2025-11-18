@@ -5,6 +5,8 @@ export default function Layout() {
     <Stack initialRouteName="login">
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="signup" options={{ headerShown: false }} />
+      <Stack.Screen name="(client-tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="tenantdash" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
   );

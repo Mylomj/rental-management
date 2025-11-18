@@ -1,8 +1,10 @@
+import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Properties() {
   const colorScheme = 'light';
@@ -40,14 +42,18 @@ export default function Properties() {
   ];
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ThemedView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Properties</Text>
-          <TouchableOpacity style={styles.addButton}>
-            <Ionicons name="add" size={24} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.addButton}>
+              <Ionicons name="add" size={24} color="#fff" />
+            </TouchableOpacity>
+            <LogoutButton />
+          </View>
         </View>
 
         {/* Properties List */}
@@ -69,17 +75,19 @@ export default function Properties() {
             </TouchableOpacity>
           ))}
         </View>
-
       </ScrollView>
-    </ThemedView>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#F7F8F9' },
   container: { flex: 1, backgroundColor: '#F7F8F9' },
   content: { padding: 20, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#000' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   addButton: { backgroundColor: '#000', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   propertiesList: { gap: 16 },
   propertyCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
@@ -90,3 +98,4 @@ const styles = StyleSheet.create({
   propertyAddress: { fontSize: 14, color: '#666' },
   propertyArrow: { padding: 8 },
 });
+

@@ -2,14 +2,18 @@ import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
-export default function TabLayout() {
+export default function ClientTabLayout() {
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.light.tint,
         tabBarInactiveTintColor: '#9AA3A8',
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#fff', borderTopWidth: 0.5, borderTopColor: '#ddd' },
+        tabBarStyle: {
+          backgroundColor: '#fff',
+          borderTopWidth: 0.5,
+          borderTopColor: '#E4E5E7',
+        },
       }}
     >
       <Tabs.Screen
@@ -20,10 +24,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="lease"
+        name="mylease"
         options={{
           title: 'My Lease',
-          tabBarIcon: ({ color, size }) => <Ionicons name="document-text-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="document-text-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -37,7 +43,9 @@ export default function TabLayout() {
         name="requests"
         options={{
           title: 'Requests',
-          tabBarIcon: ({ color, size }) => <Ionicons name="construct-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="construct-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -50,3 +58,4 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+

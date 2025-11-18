@@ -1,15 +1,18 @@
+import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Dashboard() {
   const colorScheme = 'light';
   const c = Colors[colorScheme];
 
   return (
-    <ThemedView style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
@@ -19,6 +22,7 @@ export default function Dashboard() {
             </View>
             <Text style={styles.headerTitle}>Dashboard</Text>
           </View>
+          <LogoutButton />
         </View>
 
         {/* Overview Section */}
@@ -92,14 +96,16 @@ export default function Dashboard() {
         </View>
 
       </ScrollView>
-    </ThemedView>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#F7F8F9' },
   container: { flex: 1, backgroundColor: '#F7F8F9' },
   content: { padding: 20, paddingBottom: 40 },
-  header: { marginBottom: 20 },
+  header: { marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   profileSection: { flexDirection: 'row', alignItems: 'center' },
   profileImage: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E0E0', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#000' },

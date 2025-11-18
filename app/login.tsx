@@ -3,15 +3,15 @@ import { Colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 // ✅ Optional: use a secure logging method (no passwords)
@@ -35,8 +35,12 @@ export default function LoginScreen() {
 
       // Mock successful login
       setTimeout(() => {
-        Alert.alert('Success', 'Logged in successfully (demo mode)');
-        router.replace('/(tabs)' as any);// navigate to dashboard
+        const isAdmin = password.trim() === '1111';
+        Alert.alert(
+          'Success',
+          isAdmin ? 'Admin access granted (demo mode)' : 'Logged in successfully (demo mode)'
+        );
+        router.replace((isAdmin ? '/(tabs)' : '/(client-tabs)') as any);// navigate to dashboard
       }, 800);
     } catch (error) {
       Alert.alert('Login failed', 'Please check your credentials.');
