@@ -1,47 +1,38 @@
 import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { getTenants } from '@/services/admin';
+import { TenantSummary } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Tenants() {
   const colorScheme = 'light';
   const c = Colors[colorScheme];
+  const [tenants, setTenants] = useState<TenantSummary[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const tenants = [
-    {
-      id: 1,
-      name: 'Sarah Miller',
-      address: '123 Main St, Apt 2B',
-      avatar: '👩'
-    },
-    {
-      id: 2,
-      name: 'David Lee',
-      address: '456 Oak Ave, House',
-      avatar: '👨'
-    },
-    {
-      id: 3,
-      name: 'Emily Chen',
-      address: '789 Pine Ln, Unit 3',
-      avatar: '👩'
-    },
-    {
-      id: 4,
-      name: 'Michael Brown',
-      address: '101 Elm Rd, Apt 1A',
-      avatar: '👨'
-    },
-    {
-      id: 5,
-      name: 'Jessica Davis',
-      address: '222 Maple Dr, House',
-      avatar: '👩'
-    }
-  ];
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const data = await getTenants();
+        if (!isMounted) return;
+        setTenants(data);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -58,20 +49,26 @@ export default function Tenants() {
 
         {/* Tenants List */}
         <View style={styles.tenantsList}>
-          {tenants.map((tenant) => (
-            <TouchableOpacity key={tenant.id} style={styles.tenantCard}>
-              <View style={styles.tenantAvatar}>
-                <Text style={styles.avatarText}>{tenant.avatar}</Text>
-              </View>
-              <View style={styles.tenantInfo}>
-                <Text style={styles.tenantName}>{tenant.name}</Text>
-                <Text style={styles.tenantAddress}>{tenant.address}</Text>
-              </View>
-              <TouchableOpacity style={styles.tenantArrow}>
-                <Ionicons name="chevron-forward" size={20} color="#666" />
+          {tenants.length ? (
+            tenants.map((tenant) => (
+              <TouchableOpacity key={tenant.id} style={styles.tenantCard}>
+                <View style={styles.tenantAvatar}>
+                  <Text style={styles.avatarText}>👤</Text>
+                </View>
+                <View style={styles.tenantInfo}>
+                  <Text style={styles.tenantName}>{tenant.name}</Text>
+                  <Text style={styles.tenantAddress}>{tenant.address}</Text>
+                </View>
+                <TouchableOpacity style={styles.tenantArrow}>
+                  <Ionicons name="chevron-forward" size={20} color="#666" />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
+            ))
+          ) : (
+            <Text style={styles.emptyText}>
+              {loading ? 'Loading tenants...' : 'No tenants yet.'}
+            </Text>
+          )}
         </View>
 
         </ScrollView>
@@ -95,5 +92,6 @@ const styles = StyleSheet.create({
   tenantName: { fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 4 },
   tenantAddress: { fontSize: 14, color: '#666' },
   tenantArrow: { padding: 8 },
+  emptyText: { fontSize: 14, color: '#666' },
 });
 

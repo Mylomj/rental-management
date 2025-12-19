@@ -2,9 +2,11 @@ import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { getDashboardSummary } from '@/services/admin';
+import { DashboardSummary } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +14,28 @@ export default function Reports() {
   const colorScheme = 'light';
   const c = Colors[colorScheme];
   const [activeView, setActiveView] = useState<'overview' | 'tax'>('overview');
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const s = await getDashboardSummary();
+        if (!isMounted) return;
+        setSummary(s);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -58,10 +82,26 @@ export default function Reports() {
   ];
 
   const taxSummary = [
-    { icon: 'cash-outline', label: 'Total Rental Income', value: '$24,000' },
-    { icon: 'receipt-outline', label: 'Total Expenses', value: '$8,000' },
-    { icon: 'trending-up-outline', label: 'Net Income', value: '$16,000' },
-    { icon: 'percent-outline', label: 'Tax Deductions', value: '$2,000' },
+    {
+      icon: 'cash-outline',
+      label: 'Total Rental Income',
+      value: summary ? `$${summary.totalRentCollected.toLocaleString()}` : '$0',
+    },
+    {
+      icon: 'receipt-outline',
+      label: 'Total Expenses',
+      value: '$0',
+    },
+    {
+      icon: 'trending-up-outline',
+      label: 'Net Income',
+      value: summary ? `$${summary.totalRentCollected.toLocaleString()}` : '$0',
+    },
+    {
+      icon: 'percent-outline',
+      label: 'Tax Deductions',
+      value: '$0',
+    },
   ];
 
   const taxView = (
@@ -135,19 +175,37 @@ export default function Reports() {
           <Text style={styles.sectionTitle}>Quick Overview</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>$45,200</Text>
+              <Text style={styles.statNumber}>
+                {summary
+                  ? `$${summary.totalRentCollected.toLocaleString()}`
+                  : loading
+                  ? '—'
+                  : '$0'}
+              </Text>
               <Text style={styles.statLabel}>Total Revenue</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>92%</Text>
+              <Text style={styles.statNumber}>
+                {summary
+                  ? summary.totalProperties === 0
+                    ? '0%'
+                    : `${Math.round(
+                        (summary.occupiedUnits / summary.totalProperties) * 100,
+                      )}%`
+                  : loading
+                  ? '—'
+                  : '0%'}
+              </Text>
               <Text style={styles.statLabel}>Occupancy Rate</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>4.8</Text>
+              <Text style={styles.statNumber}>0.0</Text>
               <Text style={styles.statLabel}>Avg Rating</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>15</Text>
+              <Text style={styles.statNumber}>
+                {summary ? summary.occupiedUnits : loading ? '—' : '0'}
+              </Text>
               <Text style={styles.statLabel}>Active Tenants</Text>
             </View>
           </View>

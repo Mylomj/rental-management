@@ -1,45 +1,38 @@
 import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { getProperties } from '@/services/admin';
+import { Property } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Properties() {
   const colorScheme = 'light';
   const c = Colors[colorScheme];
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const properties = [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=300&h=200&fit=crop',
-      status: 'Occupied',
-      address: '123 Main St, Apt 2B',
-      statusColor: '#28A745'
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=300&h=200&fit=crop',
-      status: 'Vacant',
-      address: '456 Oak Ave, House',
-      statusColor: '#FFC107'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=300&h=200&fit=crop',
-      status: 'Occupied',
-      address: '789 Pine Ln, Condo',
-      statusColor: '#28A745'
-    },
-    {
-      id: 4,
-      image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=300&h=200&fit=crop',
-      status: 'Vacant',
-      address: '101 Elm Rd, Duplex',
-      statusColor: '#FFC107'
-    }
-  ];
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const data = await getProperties();
+        if (!isMounted) return;
+        setProperties(data);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -58,22 +51,40 @@ export default function Properties() {
 
         {/* Properties List */}
         <View style={styles.propertiesList}>
-          {properties.map((property) => (
-            <TouchableOpacity key={property.id} style={styles.propertyCard}>
-              <View style={styles.propertyImageContainer}>
-                <Image source={{ uri: property.image }} style={styles.propertyImage} />
-              </View>
-              <View style={styles.propertyInfo}>
-                <Text style={[styles.propertyStatus, { color: property.statusColor }]}>
-                  {property.status}
-                </Text>
-                <Text style={styles.propertyAddress}>{property.address}</Text>
-              </View>
-              <TouchableOpacity style={styles.propertyArrow}>
-                <Ionicons name="chevron-forward" size={20} color="#666" />
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
+          {properties.length ? (
+            properties.map((property) => {
+              const statusLabel =
+                property.status === 'occupied' ? 'Occupied' : 'Vacant';
+              const statusColor =
+                property.status === 'occupied' ? '#28A745' : '#FFC107';
+
+              return (
+                <TouchableOpacity key={property.id} style={styles.propertyCard}>
+                  {property.imageUrl && (
+                    <View style={styles.propertyImageContainer}>
+                      <Image source={{ uri: property.imageUrl }} style={styles.propertyImage} />
+                    </View>
+                  )}
+                  <View style={styles.propertyInfo}>
+                    <Text style={[styles.propertyStatus, { color: statusColor }]}>
+                      {statusLabel}
+                    </Text>
+                    <Text style={styles.propertyAddress}>
+                      {property.address}
+                      {property.unitLabel ? `, ${property.unitLabel}` : ''}
+                    </Text>
+                  </View>
+                  <TouchableOpacity style={styles.propertyArrow}>
+                    <Ionicons name="chevron-forward" size={20} color="#666" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>
+              {loading ? 'Loading properties...' : 'No properties found.'}
+            </Text>
+          )}
         </View>
       </ScrollView>
       </ThemedView>
@@ -97,5 +108,6 @@ const styles = StyleSheet.create({
   propertyStatus: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
   propertyAddress: { fontSize: 14, color: '#666' },
   propertyArrow: { padding: 8 },
+  emptyText: { fontSize: 14, color: '#666' },
 });
 

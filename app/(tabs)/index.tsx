@@ -1,14 +1,74 @@
 import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDashboardSummary, getRecentActivity } from '@/services/admin';
+import { ActivityItem, DashboardSummary } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Dashboard() {
   const colorScheme = 'light';
   const c = Colors[colorScheme];
+  const { user, updatePhoto } = useAuth();
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingPhoto, setUpdatingPhoto] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const [summaryData, recent] = await Promise.all([
+          getDashboardSummary(),
+          getRecentActivity(),
+        ]);
+        if (!isMounted) return;
+        setSummary(summaryData);
+        setActivity(recent);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handlePickProfilePhoto = async () => {
+    setUpdatingPhoto(true);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permission.status !== 'granted') {
+        setUpdatingPhoto(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+        allowsEditing: true,
+        aspect: [1, 1],
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        await updatePhoto(uri);
+      }
+    } catch (error) {
+      // silently ignore for now
+    } finally {
+      setUpdatingPhoto(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -17,9 +77,17 @@ export default function Dashboard() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.profileSection}>
-            <View style={styles.profileImage}>
-              <Ionicons name="person" size={24} color={c.text} />
-            </View>
+            <TouchableOpacity
+              style={styles.profileImage}
+              onPress={handlePickProfilePhoto}
+              activeOpacity={0.85}
+            >
+              {user?.photoUrl ? (
+                <Image source={{ uri: user.photoUrl }} style={styles.profileImage} />
+              ) : (
+                <Ionicons name={updatingPhoto ? 'cloud-upload' : 'person'} size={24} color={c.text} />
+              )}
+            </TouchableOpacity>
             <Text style={styles.headerTitle}>Dashboard</Text>
           </View>
           <LogoutButton />
@@ -30,15 +98,21 @@ export default function Dashboard() {
         <View style={styles.overviewGrid}>
           <View style={styles.overviewCard}>
             <Text style={styles.cardTitle}>Total Properties</Text>
-            <Text style={styles.cardNumber}>5</Text>
+            <Text style={styles.cardNumber}>
+              {summary ? summary.totalProperties : loading ? '—' : '0'}
+            </Text>
           </View>
           <View style={styles.overviewCard}>
             <Text style={styles.cardTitle}>Occupied Units</Text>
-            <Text style={styles.cardNumber}>4</Text>
+            <Text style={styles.cardNumber}>
+              {summary ? summary.occupiedUnits : loading ? '—' : '0'}
+            </Text>
           </View>
           <View style={[styles.overviewCard, styles.fullWidthCard]}>
             <Text style={styles.cardTitle}>Pending Applications</Text>
-            <Text style={styles.cardNumber}>2</Text>
+            <Text style={styles.cardNumber}>
+              {summary ? summary.pendingApplications : loading ? '—' : '0'}
+            </Text>
           </View>
         </View>
 
@@ -47,35 +121,46 @@ export default function Dashboard() {
         <View style={styles.financialGrid}>
           <View style={styles.financialCard}>
             <Text style={styles.cardTitle}>Total Rent Collected</Text>
-            <Text style={styles.financialAmount}>$12,500</Text>
+            <Text style={styles.financialAmount}>
+              {summary
+                ? `$${summary.totalRentCollected.toLocaleString()}`
+                : loading
+                ? '—'
+                : '$0'}
+            </Text>
           </View>
           <View style={styles.financialCard}>
             <Text style={styles.cardTitle}>Outstanding Balance</Text>
-            <Text style={styles.financialAmount}>$1,200</Text>
+            <Text style={styles.financialAmount}>
+              {summary
+                ? `$${summary.outstandingBalance.toLocaleString()}`
+                : loading
+                ? '—'
+                : '$0'}
+            </Text>
           </View>
         </View>
 
         {/* Recent Activity */}
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         <View style={styles.activityList}>
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Ionicons name="home" size={20} color={c.text} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityText}>Lease signed with Ethan Harper</Text>
-              <Text style={styles.activitySubtext}>123 Main St</Text>
-            </View>
-          </View>
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Ionicons name="home" size={20} color={c.text} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityText}>Application received from Riley...</Text>
-              <Text style={styles.activitySubtext}>456 Oak Ave</Text>
-            </View>
-          </View>
+          {activity.length ? (
+            activity.map(item => (
+              <View key={item.id} style={styles.activityItem}>
+                <View style={styles.activityIcon}>
+                  <Ionicons name="home" size={20} color={c.text} />
+                </View>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityText}>{item.title}</Text>
+                  <Text style={styles.activitySubtext}>{item.subtitle}</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.activitySubtext}>
+              {loading ? 'Loading activity...' : 'No recent activity yet.'}
+            </Text>
+          )}
         </View>
 
         {/* Tenant Ratings */}
@@ -86,8 +171,12 @@ export default function Dashboard() {
               <Ionicons name="person" size={20} color={c.text} />
             </View>
             <View style={styles.ratingContent}>
-              <Text style={styles.ratingText}>Rate Ethan Harper</Text>
-              <Text style={styles.ratingSubtext}>Tenancy ended on 2024-01-15</Text>
+              <Text style={styles.ratingText}>No tenants to rate yet</Text>
+              <Text style={styles.ratingSubtext}>
+                {summary && summary.occupiedUnits === 0
+                  ? 'Add tenants to start collecting ratings.'
+                  : 'Ratings coming soon.'}
+              </Text>
             </View>
           </View>
           <TouchableOpacity style={styles.ratingButton}>
@@ -107,7 +196,7 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   header: { marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   profileSection: { flexDirection: 'row', alignItems: 'center' },
-  profileImage: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E0E0', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  profileImage: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0E0E0', alignItems: 'center', justifyContent: 'center', marginRight: 12, overflow: 'hidden' },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#000' },
   sectionTitle: { fontSize: 20, fontWeight: '700', marginTop: 24, marginBottom: 16, color: '#000' },
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },

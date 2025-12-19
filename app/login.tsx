@@ -1,17 +1,18 @@
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 // ✅ Optional: use a secure logging method (no passwords)
@@ -21,6 +22,7 @@ const safeLog = (message: string, data?: any) => {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -33,15 +35,15 @@ export default function LoginScreen() {
     try {
       safeLog('Attempting login for:', email);
 
-      // Mock successful login
-      setTimeout(() => {
-        const isAdmin = password.trim() === '1111';
-        Alert.alert(
-          'Success',
-          isAdmin ? 'Admin access granted (demo mode)' : 'Logged in successfully (demo mode)'
-        );
-        router.replace((isAdmin ? '/(tabs)' : '/(client-tabs)') as any);// navigate to dashboard
-      }, 800);
+      const user = await login({ email, password });
+      const isAdmin = user.role === 'admin';
+
+      Alert.alert(
+        'Success',
+        isAdmin ? 'Admin access granted (mock)' : 'Logged in successfully (mock)'
+      );
+
+      router.replace((isAdmin ? '/(tabs)' : '/(client-tabs)') as any);
     } catch (error) {
       Alert.alert('Login failed', 'Please check your credentials.');
       safeLog('Login error:', error);

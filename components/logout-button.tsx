@@ -3,14 +3,18 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 type LogoutButtonProps = {
   style?: ViewStyle;
 };
 
 export function LogoutButton({ style }: LogoutButtonProps) {
   const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     router.replace('/login' as any);
   };
 

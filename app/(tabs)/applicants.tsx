@@ -1,57 +1,38 @@
 import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { getApplicants } from '@/services/admin';
+import { ApplicantSummary } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Applicants() {
   const colorScheme = 'light';
   const c = Colors[colorScheme];
+  const [applicants, setApplicants] = useState<ApplicantSummary[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const applicants = [
-    {
-      id: 1,
-      name: 'Sarah Miller',
-      address: '123 Main St',
-      status: 'Pending',
-      statusColor: '#FFC107',
-      avatar: '👩'
-    },
-    {
-      id: 2,
-      name: 'David Lee',
-      address: '456 Oak Ave',
-      status: 'Approved',
-      statusColor: '#28A745',
-      avatar: '👨'
-    },
-    {
-      id: 3,
-      name: 'Emily Chen',
-      address: '789 Pine Ln',
-      status: 'Rejected',
-      statusColor: '#DC3545',
-      avatar: '👩'
-    },
-    {
-      id: 4,
-      name: 'Michael Brown',
-      address: '101 Elm Rd',
-      status: 'Pending',
-      statusColor: '#FFC107',
-      avatar: '👨'
-    },
-    {
-      id: 5,
-      name: 'Jessica Davis',
-      address: '222 Maple Dr',
-      status: 'Approved',
-      statusColor: '#28A745',
-      avatar: '👩'
-    }
-  ];
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const data = await getApplicants();
+        if (!isMounted) return;
+        setApplicants(data);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -68,22 +49,39 @@ export default function Applicants() {
 
         {/* Applicants List */}
         <View style={styles.applicantsList}>
-          {applicants.map((applicant) => (
-            <TouchableOpacity key={applicant.id} style={styles.applicantCard}>
-              <View style={styles.applicantAvatar}>
-                <Text style={styles.avatarText}>{applicant.avatar}</Text>
-              </View>
-              <View style={styles.applicantInfo}>
-                <Text style={styles.applicantName}>{applicant.name}</Text>
-                <Text style={styles.applicantAddress}>{applicant.address}</Text>
-              </View>
-              <View style={styles.applicantStatus}>
-                <Text style={[styles.statusText, { color: applicant.statusColor }]}>
-                  {applicant.status}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {applicants.length ? (
+            applicants.map((applicant) => {
+              const color =
+                applicant.status === 'approved'
+                  ? '#28A745'
+                  : applicant.status === 'rejected'
+                  ? '#DC3545'
+                  : '#FFC107';
+
+              const label =
+                applicant.status.charAt(0).toUpperCase() +
+                applicant.status.slice(1);
+
+              return (
+                <TouchableOpacity key={applicant.id} style={styles.applicantCard}>
+                  <View style={styles.applicantAvatar}>
+                    <Text style={styles.avatarText}>👤</Text>
+                  </View>
+                  <View style={styles.applicantInfo}>
+                    <Text style={styles.applicantName}>{applicant.name}</Text>
+                    <Text style={styles.applicantAddress}>{applicant.address}</Text>
+                  </View>
+                  <View style={styles.applicantStatus}>
+                    <Text style={[styles.statusText, { color }]}>{label}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>
+              {loading ? 'Loading applicants...' : 'No applicants yet.'}
+            </Text>
+          )}
         </View>
 
         </ScrollView>
@@ -108,5 +106,6 @@ const styles = StyleSheet.create({
   applicantAddress: { fontSize: 14, color: '#666' },
   applicantStatus: { alignItems: 'flex-end' },
   statusText: { fontSize: 14, fontWeight: '600' },
+  emptyText: { fontSize: 14, color: '#666' },
 });
 

@@ -1,8 +1,11 @@
+import { LogoutButton } from '@/components/logout-button';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { getLease, getRatings, getRequests, getUpcomingPayments } from '@/services/tenant';
+import { Lease, MaintenanceRequest, Payment, Rating } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,6 +14,43 @@ const avatarUri = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?
 export default function ClientDashboard() {
   const colorScheme = 'light';
   const c = Colors[colorScheme];
+  const [lease, setLease] = useState<Lease | null>(null);
+  const [upcomingPayment, setUpcomingPayment] = useState<Payment | null>(null);
+  const [request, setRequest] = useState<MaintenanceRequest | null>(null);
+  const [ratings, setRatings] = useState<Rating[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const [leaseData, payments, requests, ratingData] = await Promise.all([
+          getLease(),
+          getUpcomingPayments(),
+          getRequests(),
+          getRatings(),
+        ]);
+
+        if (!isMounted) return;
+
+        setLease(leaseData);
+        setUpcomingPayment(payments[0] ?? null);
+        setRequest(requests[0] ?? null);
+        setRatings(ratingData);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -22,61 +62,107 @@ export default function ClientDashboard() {
             <Image source={{ uri: avatarUri }} style={styles.avatar} />
           </View>
           <Text style={styles.headerTitle}>Dashboard</Text>
-          <Ionicons name="notifications-outline" size={22} color="#1C1C1E" />
+          <LogoutButton />
         </View>
 
         {/* Lease Details */}
         <Text style={styles.sectionTitle}>Lease Details</Text>
         <View style={styles.card}>
-          <DetailRow
-            icon="house.fill"
-            title="Apartment Address"
-            subtitle="456 Oak Ave, Apt 2A"
-          />
-          <DetailRow
-            icon="calendar"
-            title="Lease Term"
-            subtitle="August 15, 2023 - August 14, 2024"
-          />
-          <DetailRow icon="dollarsign.circle" title="Rent Amount" subtitle="$1,500/month" />
+          {lease ? (
+            <>
+              <DetailRow
+                icon="house.fill"
+                title="Apartment Address"
+                subtitle={`${lease.propertyAddress}, ${lease.unit}`}
+              />
+              <DetailRow
+                icon="calendar"
+                title="Lease Term"
+                subtitle={`${lease.startDate} - ${lease.endDate}`}
+              />
+              <DetailRow
+                icon="dollarsign.circle"
+                title="Rent Amount"
+                subtitle={`$${lease.rentAmount.toLocaleString()}/month`}
+              />
+            </>
+          ) : (
+            <Text style={styles.rowSubtitle}>
+              {loading ? 'Loading lease details...' : 'No lease details available.'}
+            </Text>
+          )}
         </View>
 
         {/* Payments */}
         <Text style={styles.sectionTitle}>Upcoming Payments</Text>
         <View style={styles.paymentCard}>
-          <View style={styles.paymentRow}>
-            <View style={styles.iconBox}>
-              <IconSymbol name="creditcard" size={22} color={c.text} />
+          {upcomingPayment ? (
+            <View style={styles.paymentRow}>
+              <View style={styles.iconBox}>
+                <IconSymbol name="creditcard" size={22} color={c.text} />
+              </View>
+              <View style={styles.paymentInfo}>
+                <Text style={styles.paymentTitle}>{upcomingPayment.label}</Text>
+                <Text style={styles.paymentSubtitle}>Due on {upcomingPayment.dueDate}</Text>
+              </View>
+              <Text style={styles.paymentAmount}>
+                ${upcomingPayment.amount.toLocaleString()}
+              </Text>
             </View>
-            <View style={styles.paymentInfo}>
-              <Text style={styles.paymentTitle}>July Rent</Text>
-              <Text style={styles.paymentSubtitle}>Due on July 1, 2024</Text>
-            </View>
-            <Text style={styles.paymentAmount}>$1,500</Text>
-          </View>
+          ) : (
+            <Text style={styles.rowSubtitle}>
+              {loading ? 'Loading payments...' : 'No upcoming payments.'}
+            </Text>
+          )}
         </View>
 
         {/* Maintenance */}
         <Text style={styles.sectionTitle}>Maintenance Requests</Text>
         <View style={styles.card}>
-          <View style={[styles.row, styles.requestRow]}>
-            <View style={styles.iconBox}>
-              <IconSymbol name="wrench.adjustable" size={22} color={c.text} />
+          {request ? (
+            <View style={[styles.row, styles.requestRow]}>
+              <View style={styles.iconBox}>
+                <IconSymbol name="wrench.adjustable" size={22} color={c.text} />
+              </View>
+              <View style={styles.col}>
+                <Text style={styles.rowTitle}>{request.title}</Text>
+                <Text style={styles.rowSubtitle}>Submitted {request.createdAt}</Text>
+              </View>
+              <View style={styles.statusDot} />
             </View>
-            <View style={styles.col}>
-              <Text style={styles.rowTitle}>Leaky Faucet</Text>
-              <Text style={styles.rowSubtitle}>Submitted June 10, 2024</Text>
-            </View>
-            <View style={styles.statusDot} />
-          </View>
+          ) : (
+            <Text style={styles.rowSubtitle}>
+              {loading ? 'Loading requests...' : 'No maintenance requests.'}
+            </Text>
+          )}
         </View>
 
         {/* Ratings */}
         <Text style={styles.sectionTitle}>Rate Your Landlord & Property</Text>
         <View style={styles.card}>
-          <RatingRow label="Rate Landlord" icon="person-circle-outline" />
-          <View style={styles.divider} />
-          <RatingRow label="Rate Property" icon="home-outline" />
+          {ratings.length ? (
+            <>
+              {ratings.map((r, index) => (
+                <React.Fragment key={r.id}>
+                  <RatingRow
+                    label={
+                      r.subject === 'landlord'
+                        ? `Rate ${r.subjectName}`
+                        : r.subject === 'property'
+                        ? 'Rate Property'
+                        : 'Rate Tenant'
+                    }
+                    icon={r.subject === 'property' ? 'home-outline' : 'person-circle-outline'}
+                  />
+                  {index < ratings.length - 1 && <View style={styles.divider} />}
+                </React.Fragment>
+              ))}
+            </>
+          ) : (
+            <Text style={styles.rowSubtitle}>
+              {loading ? 'Loading ratings...' : 'No rating actions available.'}
+            </Text>
+          )}
         </View>
         </ScrollView>
       </ThemedView>
